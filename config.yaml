@@ -1,0 +1,22 @@
+# Olist Text2SQL 项目配置
+# 敏感信息（密码、API Key）放 .env，本文件只放非敏感配置。
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  database: olist_ecommerce
+
+# Schema 精简注入：留空表示注入全部表；填写表名可只注入相关表，省 token
+schema:
+  include_tables: []
+  # 例如：["order_items", "orders"]   ← 用短表名（见 README 第 3.2 节的表名映射）
+
+llm:
+  model: glm-4.5-air    # 实际以 .env 的 OPENAI_MODEL 优先
+  temperature: 0        # 生成 SQL 用 0，保证稳定
+  max_retries: 2        # 校验失败后的自我修正次数
+
+executor:
+  timeout: 30           # 单条 SQL 超时（秒）
+  max_rows: 1000        # 最多返回行数

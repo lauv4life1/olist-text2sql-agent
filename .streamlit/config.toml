@@ -1,0 +1,16 @@
+# Streamlit 主题：纸面铅印风（与 04_visualization/chart_renderer.py 的配色保持一致）
+# 改这里的颜色时，记得同步 chart_renderer.py 顶部的主题常量。
+
+[theme]
+base = "light"
+primaryColor = "#A62B1F"            # 朱砂：唯一的强调色
+backgroundColor = "#F7F3EA"         # 纸面
+secondaryBackgroundColor = "#FFFDF8" # 卡片 / 输入区（比纸面略亮）
+textColor = "#2B2620"               # 墨色
+font = "serif"                      # 衬线：让界面读起来像报告而不是监控台
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

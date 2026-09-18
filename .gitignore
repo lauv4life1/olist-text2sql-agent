@@ -1,0 +1,52 @@
+# ============================================================
+# .gitignore —— 提交前务必确认 .env 没有被跟踪
+# ============================================================
+
+# ---- 敏感信息（绝对不要提交）----
+.env
+.env.local
+.env.*.local
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ---- 测试 / 类型检查缓存 ----
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 本地工具状态（AI 助手的项目记忆，不属交付物）----
+.workbuddy/
+
+# ---- 内部工作文件（恢复进度用，发布前可删）----
+PROJECT_STATE.md
+
+# ---- 本地冒烟测试临时文件 ----
+.streamlit_smoke.log
+
+# ---- 运行日志（本地压测 / 前端启动输出）----
+*.log
+
+# ---- 个人面试准备文档（含自我评估与话术，不公开）----
+03_agent/RESUME_DEFENSE.md
+03_agent/INTERVIEW_NOTES.md

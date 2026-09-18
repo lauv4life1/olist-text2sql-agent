@@ -1,0 +1,1229 @@
+{
+  "1": {
+    "id": 1,
+    "title": "总订单数 / 总成交额 / 客单价",
+    "question": "平台一共成交了多少订单？总成交额是多少？平均每单多少钱？",
+    "skill": "COUNT(DISTINCT) / SUM / 除法",
+    "sql": "SELECT COUNT(DISTINCT order_id) AS total_orders, ROUND(SUM(payment_value), 2) AS gmv, ROUND(SUM(payment_value) / COUNT(DISTINCT order_id), 2) AS aov FROM order_payments",
+    "row_count": 1,
+    "rows": [
+      {
+        "total_orders": 99440,
+        "gmv": 16008872.12,
+        "aov": 160.99
+      }
+    ],
+    "status": "ok"
+  },
+  "2": {
+    "id": 2,
+    "title": "每月销售趋势",
+    "question": "每个月的销售额走势怎么样？是在涨还是跌？",
+    "skill": "DATE_FORMAT + GROUP BY + JOIN",
+    "sql": "SELECT DATE_FORMAT(o.order_purchase_timestamp, '%Y-%m') AS month, ROUND(SUM(p.payment_value), 2) AS monthly_gmv, COUNT(DISTINCT o.order_id) AS monthly_orders FROM orders o JOIN order_payments p ON o.order_id = p.order_id GROUP BY month ORDER BY month",
+    "row_count": 25,
+    "rows": [
+      {
+        "month": "2016-09",
+        "monthly_gmv": 252.24,
+        "monthly_orders": 3
+      },
+      {
+        "month": "2016-10",
+        "monthly_gmv": 59090.48,
+        "monthly_orders": 324
+      },
+      {
+        "month": "2016-12",
+        "monthly_gmv": 19.62,
+        "monthly_orders": 1
+      },
+      {
+        "month": "2017-01",
+        "monthly_gmv": 138488.04,
+        "monthly_orders": 800
+      },
+      {
+        "month": "2017-02",
+        "monthly_gmv": 291908.01,
+        "monthly_orders": 1780
+      },
+      {
+        "month": "2017-03",
+        "monthly_gmv": 449863.6,
+        "monthly_orders": 2682
+      },
+      {
+        "month": "2017-04",
+        "monthly_gmv": 417788.03,
+        "monthly_orders": 2404
+      },
+      {
+        "month": "2017-05",
+        "monthly_gmv": 592918.82,
+        "monthly_orders": 3700
+      },
+      {
+        "month": "2017-06",
+        "monthly_gmv": 511276.38,
+        "monthly_orders": 3245
+      },
+      {
+        "month": "2017-07",
+        "monthly_gmv": 592382.92,
+        "monthly_orders": 4026
+      },
+      {
+        "month": "2017-08",
+        "monthly_gmv": 674396.32,
+        "monthly_orders": 4331
+      },
+      {
+        "month": "2017-09",
+        "monthly_gmv": 727762.45,
+        "monthly_orders": 4285
+      },
+      {
+        "month": "2017-10",
+        "monthly_gmv": 779677.88,
+        "monthly_orders": 4631
+      },
+      {
+        "month": "2017-11",
+        "monthly_gmv": 1194882.8,
+        "monthly_orders": 7544
+      },
+      {
+        "month": "2017-12",
+        "monthly_gmv": 878401.48,
+        "monthly_orders": 5673
+      },
+      {
+        "month": "2018-01",
+        "monthly_gmv": 1115004.18,
+        "monthly_orders": 7269
+      },
+      {
+        "month": "2018-02",
+        "monthly_gmv": 992463.34,
+        "monthly_orders": 6728
+      },
+      {
+        "month": "2018-03",
+        "monthly_gmv": 1159652.12,
+        "monthly_orders": 7211
+      },
+      {
+        "month": "2018-04",
+        "monthly_gmv": 1160785.48,
+        "monthly_orders": 6939
+      },
+      {
+        "month": "2018-05",
+        "monthly_gmv": 1153982.15,
+        "monthly_orders": 6873
+      },
+      {
+        "month": "2018-06",
+        "monthly_gmv": 1023880.5,
+        "monthly_orders": 6167
+      },
+      {
+        "month": "2018-07",
+        "monthly_gmv": 1066540.75,
+        "monthly_orders": 6292
+      },
+      {
+        "month": "2018-08",
+        "monthly_gmv": 1022425.32,
+        "monthly_orders": 6512
+      },
+      {
+        "month": "2018-09",
+        "monthly_gmv": 4439.54,
+        "monthly_orders": 16
+      },
+      {
+        "month": "2018-10",
+        "monthly_gmv": 589.67,
+        "monthly_orders": 4
+      }
+    ],
+    "status": "ok"
+  },
+  "3": {
+    "id": 3,
+    "title": "各品类销售额排名",
+    "question": "哪个商品品类最赚钱？给我排个名，前几名是哪些？",
+    "skill": "JOIN + GROUP BY + ORDER BY + LIMIT",
+    "sql": "SELECT COALESCE(t.product_category_name_english, p.product_category_name) AS category, ROUND(SUM(oi.price), 2) AS category_sales, COUNT(*) AS items_sold FROM order_items oi JOIN products p ON oi.product_id = p.product_id LEFT JOIN product_category_name_translation t ON p.product_category_name = t.product_category_name GROUP BY category ORDER BY category_sales DESC LIMIT 10",
+    "row_count": 10,
+    "rows": [
+      {
+        "category": "health_beauty",
+        "category_sales": 1258681.34,
+        "items_sold": 9670
+      },
+      {
+        "category": "watches_gifts",
+        "category_sales": 1205005.68,
+        "items_sold": 5991
+      },
+      {
+        "category": "bed_bath_table",
+        "category_sales": 1036988.68,
+        "items_sold": 11115
+      },
+      {
+        "category": "sports_leisure",
+        "category_sales": 988048.97,
+        "items_sold": 8641
+      },
+      {
+        "category": "computers_accessories",
+        "category_sales": 911954.32,
+        "items_sold": 7827
+      },
+      {
+        "category": "furniture_decor",
+        "category_sales": 729762.49,
+        "items_sold": 8334
+      },
+      {
+        "category": "cool_stuff",
+        "category_sales": 635290.85,
+        "items_sold": 3796
+      },
+      {
+        "category": "housewares",
+        "category_sales": 632248.66,
+        "items_sold": 6964
+      },
+      {
+        "category": "auto",
+        "category_sales": 592720.11,
+        "items_sold": 4235
+      },
+      {
+        "category": "garden_tools",
+        "category_sales": 485256.46,
+        "items_sold": 4347
+      }
+    ],
+    "status": "ok"
+  },
+  "4": {
+    "id": 4,
+    "title": "复购率",
+    "question": "我们的客户忠诚吗？整体复购率是多少？",
+    "skill": "子查询 + GROUP BY + 去重",
+    "sql": "SELECT COUNT(*) AS total_customers, SUM(order_count >= 2) AS repeat_customers, ROUND(SUM(order_count >= 2) / COUNT(*), 4) AS repurchase_rate FROM ( SELECT c.customer_unique_id, COUNT(*) AS order_count FROM orders o JOIN customers c ON o.customer_id = c.customer_id GROUP BY c.customer_unique_id ) t",
+    "row_count": 1,
+    "rows": [
+      {
+        "total_customers": 96096,
+        "repeat_customers": 2997.0,
+        "repurchase_rate": 0.0312
+      }
+    ],
+    "status": "ok"
+  },
+  "5": {
+    "id": 5,
+    "title": "各州订单分布 + 配送天数",
+    "question": "订单在各州的分布如何？每个州的平均配送天数是多少？",
+    "skill": "3 表 JOIN + 日期差 + 聚合",
+    "sql": "WITH per_order AS ( SELECT o.order_id, c.customer_state, TIMESTAMPDIFF(DAY, o.order_purchase_timestamp, o.order_delivered_customer_date) AS delivery_days FROM orders o JOIN customers c ON o.customer_id = c.customer_id ), order_gmv AS ( SELECT order_id, SUM(payment_value) AS gmv FROM order_payments GROUP BY order_id ) SELECT po.customer_state AS state, COUNT(*) AS orders, ROUND(SUM(g.gmv), 2) AS gmv, ROUND(AVG(po.delivery_days), 1) AS avg_delivery_days FROM per_order po JOIN order_gmv g ON po.order_id = g.order_id GROUP BY po.customer_state ORDER BY orders DESC",
+    "row_count": 27,
+    "rows": [
+      {
+        "state": "SP",
+        "orders": 41745,
+        "gmv": 5998226.96,
+        "avg_delivery_days": 8.3
+      },
+      {
+        "state": "RJ",
+        "orders": 12852,
+        "gmv": 2144379.69,
+        "avg_delivery_days": 14.8
+      },
+      {
+        "state": "MG",
+        "orders": 11635,
+        "gmv": 1872257.26,
+        "avg_delivery_days": 11.5
+      },
+      {
+        "state": "RS",
+        "orders": 5466,
+        "gmv": 890898.54,
+        "avg_delivery_days": 14.8
+      },
+      {
+        "state": "PR",
+        "orders": 5045,
+        "gmv": 811156.38,
+        "avg_delivery_days": 11.5
+      },
+      {
+        "state": "SC",
+        "orders": 3637,
+        "gmv": 623086.43,
+        "avg_delivery_days": 14.5
+      },
+      {
+        "state": "BA",
+        "orders": 3380,
+        "gmv": 616645.82,
+        "avg_delivery_days": 18.9
+      },
+      {
+        "state": "DF",
+        "orders": 2140,
+        "gmv": 355141.08,
+        "avg_delivery_days": 12.5
+      },
+      {
+        "state": "ES",
+        "orders": 2033,
+        "gmv": 325967.55,
+        "avg_delivery_days": 15.3
+      },
+      {
+        "state": "GO",
+        "orders": 2020,
+        "gmv": 350092.31,
+        "avg_delivery_days": 15.2
+      },
+      {
+        "state": "PE",
+        "orders": 1652,
+        "gmv": 324850.44,
+        "avg_delivery_days": 18.0
+      },
+      {
+        "state": "CE",
+        "orders": 1336,
+        "gmv": 279464.03,
+        "avg_delivery_days": 20.8
+      },
+      {
+        "state": "PA",
+        "orders": 975,
+        "gmv": 218295.85,
+        "avg_delivery_days": 23.3
+      },
+      {
+        "state": "MT",
+        "orders": 907,
+        "gmv": 187029.29,
+        "avg_delivery_days": 17.6
+      },
+      {
+        "state": "MA",
+        "orders": 747,
+        "gmv": 152523.02,
+        "avg_delivery_days": 21.1
+      },
+      {
+        "state": "MS",
+        "orders": 715,
+        "gmv": 137534.84,
+        "avg_delivery_days": 15.2
+      },
+      {
+        "state": "PB",
+        "orders": 536,
+        "gmv": 141545.72,
+        "avg_delivery_days": 20.0
+      },
+      {
+        "state": "PI",
+        "orders": 495,
+        "gmv": 108523.97,
+        "avg_delivery_days": 19.0
+      },
+      {
+        "state": "RN",
+        "orders": 485,
+        "gmv": 102718.13,
+        "avg_delivery_days": 18.8
+      },
+      {
+        "state": "AL",
+        "orders": 413,
+        "gmv": 96962.06,
+        "avg_delivery_days": 24.0
+      },
+      {
+        "state": "SE",
+        "orders": 350,
+        "gmv": 75246.25,
+        "avg_delivery_days": 21.0
+      },
+      {
+        "state": "TO",
+        "orders": 280,
+        "gmv": 61485.33,
+        "avg_delivery_days": 17.2
+      },
+      {
+        "state": "RO",
+        "orders": 253,
+        "gmv": 60866.2,
+        "avg_delivery_days": 18.9
+      },
+      {
+        "state": "AM",
+        "orders": 148,
+        "gmv": 27966.93,
+        "avg_delivery_days": 26.0
+      },
+      {
+        "state": "AC",
+        "orders": 81,
+        "gmv": 19680.62,
+        "avg_delivery_days": 20.6
+      },
+      {
+        "state": "AP",
+        "orders": 68,
+        "gmv": 16262.8,
+        "avg_delivery_days": 26.7
+      },
+      {
+        "state": "RR",
+        "orders": 46,
+        "gmv": 10064.62,
+        "avg_delivery_days": 29.0
+      }
+    ],
+    "status": "ok"
+  },
+  "6": {
+    "id": 6,
+    "title": "评分最高的产品 + 卖家",
+    "question": "评分最高的产品和卖家分别是哪些？",
+    "skill": "4 表 JOIN + AVG + HAVING",
+    "sql": "WITH product_scores AS ( SELECT oi.product_id, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS review_count FROM order_items oi JOIN order_reviews r ON oi.order_id = r.order_id GROUP BY oi.product_id HAVING COUNT(*) >= 20 ORDER BY avg_score DESC, review_count DESC LIMIT 10 ), seller_scores AS ( SELECT oi.seller_id, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS review_count FROM order_items oi JOIN order_reviews r ON oi.order_id = r.order_id GROUP BY oi.seller_id HAVING COUNT(*) >= 20 ORDER BY avg_score DESC, review_count DESC LIMIT 10 ) SELECT 'product' AS entity_type, product_id AS entity_id, avg_score, review_count FROM product_scores UNION ALL SELECT 'seller' AS entity_type, seller_id AS entity_id, avg_score, review_count FROM seller_scores ORDER BY entity_type, avg_score DESC, review_count DESC",
+    "row_count": 20,
+    "rows": [
+      {
+        "entity_type": "product",
+        "entity_id": "3e4176d545618ed02f382a3057de32b4",
+        "avg_score": 4.96,
+        "review_count": 24
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "e7f85e7f0203b7b95cc1b4c21b4b070c",
+        "avg_score": 4.87,
+        "review_count": 23
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "73326828aa5efe1ba096223de496f596",
+        "avg_score": 4.83,
+        "review_count": 54
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "574597aaf385996112490308e37399ce",
+        "avg_score": 4.83,
+        "review_count": 24
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "f7f59e6186e10983a061ac7bdb3494d6",
+        "avg_score": 4.82,
+        "review_count": 39
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "990d135e28e075648cb7d83198fdccf4",
+        "avg_score": 4.81,
+        "review_count": 27
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "e7d5464b94c9a5963f7c686fc80145ad",
+        "avg_score": 4.75,
+        "review_count": 20
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "89b190a046022486c635022524a974a8",
+        "avg_score": 4.75,
+        "review_count": 20
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "11250b0d4b709fee92441c5f34122aed",
+        "avg_score": 4.73,
+        "review_count": 22
+      },
+      {
+        "entity_type": "product",
+        "entity_id": "719d571299707561c34ba04ab867b32a",
+        "avg_score": 4.72,
+        "review_count": 32
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "48efc9d94a9834137efd9ea76b065a38",
+        "avg_score": 5.0,
+        "review_count": 34
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "334cab711dee080b079fa5779b584783",
+        "avg_score": 4.96,
+        "review_count": 26
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "41c2bad7229b0c25e6becf179ebf63ff",
+        "avg_score": 4.96,
+        "review_count": 23
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "b1fecf4da1fa2689bccffa0121953643",
+        "avg_score": 4.95,
+        "review_count": 20
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "30a81d8cf85fb2ada1b1b094c9583a95",
+        "avg_score": 4.85,
+        "review_count": 20
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "02f5837340d7eb4f653d676c7256523a",
+        "avg_score": 4.83,
+        "review_count": 30
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "d9bd94811c3338dceb4181f3dbc0c73e",
+        "avg_score": 4.82,
+        "review_count": 61
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "d13e50eaa47b4cbe9eb81465865d8cfc",
+        "avg_score": 4.81,
+        "review_count": 69
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "42fa4ee7240e9b8eb4576358ec142ba7",
+        "avg_score": 4.81,
+        "review_count": 21
+      },
+      {
+        "entity_type": "seller",
+        "entity_id": "7ade73f1b9b4e965f9009a4c3a7e2c15",
+        "avg_score": 4.78,
+        "review_count": 27
+      }
+    ],
+    "status": "ok"
+  },
+  "7": {
+    "id": 7,
+    "title": "Top5 卖家月销售趋势",
+    "question": "销售额最高的前 5 个卖家，他们每个月的销售趋势如何？",
+    "skill": "CTE / ROW_NUMBER + 双聚合",
+    "sql": "WITH top5 AS ( SELECT seller_id FROM order_items GROUP BY seller_id ORDER BY SUM(price) DESC LIMIT 5 ) SELECT oi.seller_id AS seller_id, DATE_FORMAT(o.order_purchase_timestamp, '%Y-%m') AS month, ROUND(SUM(oi.price), 2) AS monthly_sales FROM order_items oi JOIN top5 t ON oi.seller_id = t.seller_id JOIN orders o ON oi.order_id = o.order_id GROUP BY oi.seller_id, month ORDER BY oi.seller_id, month",
+    "row_count": 89,
+    "rows": [
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-03",
+        "monthly_sales": 1620.0
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-05",
+        "monthly_sales": 374.0
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-06",
+        "monthly_sales": 5064.85
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-07",
+        "monthly_sales": 7201.3
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-08",
+        "monthly_sales": 11386.78
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-09",
+        "monthly_sales": 12536.4
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-10",
+        "monthly_sales": 16548.7
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-11",
+        "monthly_sales": 18698.2
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2017-12",
+        "monthly_sales": 17627.8
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-01",
+        "monthly_sales": 19954.2
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-02",
+        "monthly_sales": 18932.8
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-03",
+        "monthly_sales": 25545.9
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-04",
+        "monthly_sales": 21209.4
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-05",
+        "monthly_sales": 14027.6
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-06",
+        "monthly_sales": 15769.1
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-07",
+        "monthly_sales": 8546.2
+      },
+      {
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+        "month": "2018-08",
+        "monthly_sales": 14429.4
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-01",
+        "monthly_sales": 2186.2
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-02",
+        "monthly_sales": 1531.1
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-03",
+        "monthly_sales": 6586.3
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-04",
+        "monthly_sales": 7408.2
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-05",
+        "monthly_sales": 13372.4
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-06",
+        "monthly_sales": 10042.2
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-07",
+        "monthly_sales": 15309.19
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-08",
+        "monthly_sales": 16002.6
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-09",
+        "monthly_sales": 12424.4
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-10",
+        "monthly_sales": 12495.95
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-11",
+        "monthly_sales": 21162.45
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2017-12",
+        "monthly_sales": 9063.78
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-01",
+        "monthly_sales": 11103.25
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-02",
+        "monthly_sales": 11726.89
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-03",
+        "monthly_sales": 12368.05
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-04",
+        "monthly_sales": 7823.7
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-05",
+        "monthly_sales": 9843.46
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-06",
+        "monthly_sales": 7876.3
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-07",
+        "monthly_sales": 7216.1
+      },
+      {
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+        "month": "2018-08",
+        "monthly_sales": 4930.4
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2017-08",
+        "monthly_sales": 34576.0
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2017-09",
+        "monthly_sales": 64337.56
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2017-10",
+        "monthly_sales": 41708.0
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2017-11",
+        "monthly_sales": 20339.96
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2017-12",
+        "monthly_sales": 20152.4
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-01",
+        "monthly_sales": 7450.0
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-02",
+        "monthly_sales": 470.0
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-03",
+        "monthly_sales": 490.0
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-04",
+        "monthly_sales": 6984.93
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-06",
+        "monthly_sales": 431.4
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-07",
+        "monthly_sales": 9397.8
+      },
+      {
+        "seller_id": "53243585a1d6dc2643021fd1853d8905",
+        "month": "2018-08",
+        "monthly_sales": 16438.0
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-01",
+        "monthly_sales": 1365.33
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-02",
+        "monthly_sales": 4900.04
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-03",
+        "monthly_sales": 6896.91
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-04",
+        "monthly_sales": 4023.4
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-05",
+        "monthly_sales": 7087.73
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-06",
+        "monthly_sales": 6703.57
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-07",
+        "monthly_sales": 15661.22
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-08",
+        "monthly_sales": 8614.8
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-09",
+        "monthly_sales": 6523.23
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-10",
+        "monthly_sales": 14875.53
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-11",
+        "monthly_sales": 14010.12
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2017-12",
+        "monthly_sales": 4515.11
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-01",
+        "monthly_sales": 15673.35
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-02",
+        "monthly_sales": 11675.81
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-03",
+        "monthly_sales": 25569.97
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-04",
+        "monthly_sales": 14049.63
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-05",
+        "monthly_sales": 11356.09
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-06",
+        "monthly_sales": 5440.45
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-07",
+        "monthly_sales": 7681.83
+      },
+      {
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+        "month": "2018-08",
+        "monthly_sales": 1299.77
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-01",
+        "monthly_sales": 3745.0
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-02",
+        "monthly_sales": 1984.4
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-03",
+        "monthly_sales": 9266.08
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-04",
+        "monthly_sales": 4133.53
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-05",
+        "monthly_sales": 2924.13
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-06",
+        "monthly_sales": 2979.9
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-07",
+        "monthly_sales": 8861.1
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-08",
+        "monthly_sales": 8667.25
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-09",
+        "monthly_sales": 7624.9
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-10",
+        "monthly_sales": 10150.03
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-11",
+        "monthly_sales": 16165.68
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2017-12",
+        "monthly_sales": 22526.61
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-01",
+        "monthly_sales": 17353.94
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-02",
+        "monthly_sales": 9094.29
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-03",
+        "monthly_sales": 11510.02
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-04",
+        "monthly_sales": 11224.98
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-05",
+        "monthly_sales": 12180.29
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-06",
+        "monthly_sales": 12755.54
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-07",
+        "monthly_sales": 12179.56
+      },
+      {
+        "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+        "month": "2018-08",
+        "monthly_sales": 8714.8
+      }
+    ],
+    "status": "ok"
+  },
+  "8": {
+    "id": 8,
+    "title": "下单到签收平均时长",
+    "question": "从下单到客户签收，平均要多少天？各月趋势如何？",
+    "skill": "TIMESTAMPDIFF + 聚合",
+    "sql": "SELECT DATE_FORMAT(order_purchase_timestamp, '%Y-%m') AS month, COUNT(*) AS delivered_orders, ROUND(AVG(TIMESTAMPDIFF(DAY, order_purchase_timestamp, order_delivered_customer_date)), 1) AS avg_delivery_days FROM orders WHERE order_delivered_customer_date IS NOT NULL GROUP BY month ORDER BY month",
+    "row_count": 23,
+    "rows": [
+      {
+        "month": "2016-09",
+        "delivered_orders": 1,
+        "avg_delivery_days": 54.0
+      },
+      {
+        "month": "2016-10",
+        "delivered_orders": 270,
+        "avg_delivery_days": 19.1
+      },
+      {
+        "month": "2016-12",
+        "delivered_orders": 1,
+        "avg_delivery_days": 4.0
+      },
+      {
+        "month": "2017-01",
+        "delivered_orders": 750,
+        "avg_delivery_days": 12.1
+      },
+      {
+        "month": "2017-02",
+        "delivered_orders": 1653,
+        "avg_delivery_days": 12.6
+      },
+      {
+        "month": "2017-03",
+        "delivered_orders": 2546,
+        "avg_delivery_days": 12.4
+      },
+      {
+        "month": "2017-04",
+        "delivered_orders": 2303,
+        "avg_delivery_days": 14.4
+      },
+      {
+        "month": "2017-05",
+        "delivered_orders": 3545,
+        "avg_delivery_days": 10.8
+      },
+      {
+        "month": "2017-06",
+        "delivered_orders": 3135,
+        "avg_delivery_days": 11.5
+      },
+      {
+        "month": "2017-07",
+        "delivered_orders": 3872,
+        "avg_delivery_days": 11.1
+      },
+      {
+        "month": "2017-08",
+        "delivered_orders": 4193,
+        "avg_delivery_days": 10.7
+      },
+      {
+        "month": "2017-09",
+        "delivered_orders": 4150,
+        "avg_delivery_days": 11.4
+      },
+      {
+        "month": "2017-10",
+        "delivered_orders": 4478,
+        "avg_delivery_days": 11.4
+      },
+      {
+        "month": "2017-11",
+        "delivered_orders": 7288,
+        "avg_delivery_days": 14.7
+      },
+      {
+        "month": "2017-12",
+        "delivered_orders": 5513,
+        "avg_delivery_days": 14.9
+      },
+      {
+        "month": "2018-01",
+        "delivered_orders": 7069,
+        "avg_delivery_days": 13.6
+      },
+      {
+        "month": "2018-02",
+        "delivered_orders": 6556,
+        "avg_delivery_days": 16.5
+      },
+      {
+        "month": "2018-03",
+        "delivered_orders": 7003,
+        "avg_delivery_days": 15.9
+      },
+      {
+        "month": "2018-04",
+        "delivered_orders": 6798,
+        "avg_delivery_days": 11.0
+      },
+      {
+        "month": "2018-05",
+        "delivered_orders": 6749,
+        "avg_delivery_days": 11.0
+      },
+      {
+        "month": "2018-06",
+        "delivered_orders": 6096,
+        "avg_delivery_days": 8.8
+      },
+      {
+        "month": "2018-07",
+        "delivered_orders": 6156,
+        "avg_delivery_days": 8.5
+      },
+      {
+        "month": "2018-08",
+        "delivered_orders": 6351,
+        "avg_delivery_days": 7.3
+      }
+    ],
+    "status": "ok"
+  },
+  "9": {
+    "id": 9,
+    "title": "销售额环比下降的月份",
+    "question": "哪些月份的销售额比上个月下降了？",
+    "skill": "LAG() 窗口函数 + 环比",
+    "sql": "WITH monthly AS ( SELECT DATE_FORMAT(o.order_purchase_timestamp, '%Y-%m') AS month, SUM(p.payment_value) AS sales FROM orders o JOIN order_payments p ON o.order_id = p.order_id GROUP BY month ) SELECT month, ROUND(sales, 2) AS sales, ROUND(prev_sales, 2) AS prev_sales, ROUND(sales - prev_sales, 2) AS delta FROM ( SELECT month, sales, LAG(sales) OVER (ORDER BY month) AS prev_sales FROM monthly ) t WHERE sales < prev_sales ORDER BY month",
+    "row_count": 10,
+    "rows": [
+      {
+        "month": "2016-12",
+        "sales": 19.62,
+        "prev_sales": 59090.48,
+        "delta": -59070.86
+      },
+      {
+        "month": "2017-04",
+        "sales": 417788.03,
+        "prev_sales": 449863.6,
+        "delta": -32075.57
+      },
+      {
+        "month": "2017-06",
+        "sales": 511276.38,
+        "prev_sales": 592918.82,
+        "delta": -81642.44
+      },
+      {
+        "month": "2017-12",
+        "sales": 878401.48,
+        "prev_sales": 1194882.8,
+        "delta": -316481.32
+      },
+      {
+        "month": "2018-02",
+        "sales": 992463.34,
+        "prev_sales": 1115004.18,
+        "delta": -122540.84
+      },
+      {
+        "month": "2018-05",
+        "sales": 1153982.15,
+        "prev_sales": 1160785.48,
+        "delta": -6803.33
+      },
+      {
+        "month": "2018-06",
+        "sales": 1023880.5,
+        "prev_sales": 1153982.15,
+        "delta": -130101.65
+      },
+      {
+        "month": "2018-08",
+        "sales": 1022425.32,
+        "prev_sales": 1066540.75,
+        "delta": -44115.43
+      },
+      {
+        "month": "2018-09",
+        "sales": 4439.54,
+        "prev_sales": 1022425.32,
+        "delta": -1017985.78
+      },
+      {
+        "month": "2018-10",
+        "sales": 589.67,
+        "prev_sales": 4439.54,
+        "delta": -3849.87
+      }
+    ],
+    "status": "ok"
+  },
+  "10": {
+    "id": 10,
+    "title": "高价值客户画像",
+    "question": "我们的高价值客户有什么特征？该如何运营他们？",
+    "skill": "CTE + NTILE 百分位分层",
+    "sql": "WITH spend AS ( SELECT c.customer_unique_id, SUM(p.payment_value) AS total_spend, COUNT(DISTINCT o.order_id) AS orders FROM orders o JOIN customers c ON o.customer_id = c.customer_id JOIN order_payments p ON o.order_id = p.order_id GROUP BY c.customer_unique_id ), ranked AS ( SELECT *, NTILE(5) OVER (ORDER BY total_spend DESC) AS quintile FROM spend ) SELECT quintile, COUNT(*) AS customers, ROUND(AVG(total_spend), 2) AS avg_spend, ROUND(AVG(orders), 2) AS avg_orders FROM ranked GROUP BY quintile ORDER BY quintile",
+    "row_count": 5,
+    "rows": [
+      {
+        "quintile": 1,
+        "customers": 19219,
+        "avg_spend": 447.89,
+        "avg_orders": 1.1
+      },
+      {
+        "quintile": 2,
+        "customers": 19219,
+        "avg_spend": 165.83,
+        "avg_orders": 1.04
+      },
+      {
+        "quintile": 3,
+        "customers": 19219,
+        "avg_spend": 108.82,
+        "avg_orders": 1.02
+      },
+      {
+        "quintile": 4,
+        "customers": 19219,
+        "avg_spend": 70.69,
+        "avg_orders": 1.01
+      },
+      {
+        "quintile": 5,
+        "customers": 19219,
+        "avg_spend": 39.74,
+        "avg_orders": 1.0
+      }
+    ],
+    "status": "ok"
+  }
+}
