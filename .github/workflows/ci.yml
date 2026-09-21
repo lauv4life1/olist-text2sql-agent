@@ -21,7 +21,7 @@ jobs:
       - name: 安装依赖
         run: pip install -r requirements.txt
 
-      - name: 单元测试（79 项，无需数据库与 API Key）
+      - name: 单元测试（81 项，无需数据库与 API Key）
         run: python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 
       - name: 口径自检（基线 / prompt / few-shot / 评估指标 / 断言 五处一致性）
