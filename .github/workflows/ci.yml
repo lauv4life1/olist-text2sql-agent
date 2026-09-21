@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 单元测试（67 项，无需数据库与 API Key）
+        run: python -m unittest discover -s 03_agent/tests -t 03_agent/tests
+
+      - name: 口径自检（基线 / prompt / few-shot / 评估指标 / 断言 五处一致性）
+        run: python 03_agent/caliber_check.py

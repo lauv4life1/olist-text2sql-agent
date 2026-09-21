@@ -1,5 +1,7 @@
 # Olist 电商数据分析 Agent（Text2SQL）
 
+![CI](https://github.com/lauv4life1/olist-text2sql-agent/actions/workflows/ci.yml/badge.svg)
+
 > 用自然语言问业务问题 → Agent 自动生成 SQL → 校验执行 → 出图表 + 业务结论。
 > 基于 Kaggle **Brazilian E-Commerce (Olist)** 数据集，MySQL 存储，支持任意 OpenAI 协议大模型。
 
@@ -375,7 +377,7 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - [x] 高压测试脚本（`stress_test.py`）+ 安全/执行边界单测（67 项）
 - [x] 第 0 层拒答协议、第 3.5 层执行反馈、C23 作用域闸门
 - [x] 可视化**中文标签层**（`labels.py`）+ 纸面铅印风主题（图表与前端统一）
-- [ ] 把 `caliber_check.py` + 单测接入 CI（提交前自动跑）
+- [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 67 项单测 + 口径自检）
 - [ ] 口径断言做成**可配置规则表**（YAML），支持按数据集替换守恒量
 - [ ] C20 的"问题驱动"目前靠中文关键词正则，改为让 LLM 先声明"要哪几列"更稳
 - [ ] 支持多轮追问与图表交互下钻
