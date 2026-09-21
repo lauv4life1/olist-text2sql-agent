@@ -39,6 +39,36 @@
 
 ---
 
+## BI 看板（Tableau）
+
+同一份口径登记表也支撑固定看板：`06_bi/make_bi_exports.py` 产出 4 张预聚合宽表，
+Tableau 直接连 CSV 出图，**不需要再写任何 SQL**。
+
+![Olist 电商经营看板：月度成交额趋势 / 品类销售额 Top 15 / 各州成交额 / 消费分层人均消费](docs/screenshots/07-bi-dashboard.png)
+
+四张工作表各自对应一张宽表：
+
+| 工作表 | 数据源 | 核对点（与 `CALIBER.md` 一致） |
+|---|---|---|
+| 各州成交额（降序） | `dim_state.csv` | 圣保罗 5,998,227；27 州合计 = 16,008,872 |
+| 月度成交额趋势 | `fct_monthly.csv` | 只画 20 个完整月（2017-01 ~ 2018-08），末月 1,022,425 |
+| 品类销售额 Top 15 | `dim_category.csv` | 首名美妆个护 1,258,681；Top 15 占全网 76.29% |
+| 消费分层人均消费 | `dim_customer_segment.csv` | 447.9 / 165.8 / 108.8 / 70.7 / 39.7，各档均 19,219 人 |
+
+![各州成交额（降序排列）](docs/screenshots/03-bi-state.png)
+
+![月度成交额趋势](docs/screenshots/04-bi-monthly.png)
+
+![品类销售额 Top 15](docs/screenshots/05-bi-category.png)
+
+![消费分层人均消费](docs/screenshots/06-bi-segment.png)
+
+> BI 层最容易出错的一处是比值指标：筛选之后想看总客单价，`AVG([客单价（元）])` 是错的
+> （各州订单量不同，平均的平均 ≠ 总体比值），必须建计算字段 `SUM([成交额（元）]) / SUM([订单数])`。
+> 这条与 Agent 层 C2 是同一条规则 —— 口径治理不只约束 LLM 生成的 SQL，也约束 BI 层的手工计算字段。
+
+---
+
 ## 1. 为什么做这个项目
 
 数据分析岗的核心动作是“把业务问题翻译成数据查询”，Text2SQL 是这个动作的自动化。
@@ -106,7 +136,8 @@ flowchart TD
 06_bi/            make_bi_exports.py      # 生成 BI 层预聚合宽表（12 条断言：6 守恒 + 2 完整月 + 4 形状）
                   exports/*.csv           # Tableau / Power BI 直接可读的中文宽表
                   README.md               # BI 数据字典 + Tableau 操作说明
-docs/screenshots/ 01-landing.png 02-result.png   # README 用的界面截图
+docs/screenshots/ 01-landing.png 02-result.png           # Agent 前端截图
+                  03~06-bi-*.png 07-bi-dashboard.png     # Tableau 看板截图
 ```
 
 **BI 层（Tableau）**
