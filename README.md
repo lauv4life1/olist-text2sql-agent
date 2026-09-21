@@ -103,8 +103,18 @@ flowchart TD
                   sample_charts.html    # 离线样例图（10 题全部渲染）
 05_app/           app.py                  # Streamlit 前端
                   ../.streamlit/config.toml  # Streamlit 主题（与 chart_renderer 同色）
+06_bi/            make_bi_exports.py      # 生成 BI 层预聚合宽表（6 条守恒 + 4 条形状断言）
+                  exports/*.csv           # Tableau / Power BI 直接可读的中文宽表
+                  README.md               # BI 数据字典 + Tableau 操作说明
 docs/screenshots/ 01-landing.png 02-result.png   # README 用的界面截图
 ```
+
+**BI 层（Tableau）**
+
+Agent 面向探索式提问（结果列与形状不固定），BI 层面向固定看板，两者是上下游关系：
+`06_bi/make_bi_exports.py` 按口径把数据预聚合成 4 张宽表（州 / 品类 / 月度 / 客户分层，
+含中文列名与取值），Tableau 直接连 CSV 即可出图。宽表口径与 `03_agent/CALIBER.md` 一致，
+脚本自带 6 条守恒断言 + 4 条形状断言，不通过则退出码 1。数据字典与操作步骤见 `06_bi/README.md`。
 
 ---
 
