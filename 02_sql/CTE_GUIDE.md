@@ -719,7 +719,7 @@ python 02_sql/sql_answers.py
 # 2) 确认口径五处仍然一致（基线 SQL / prompt / few-shot / 评估指标 / 第 4 层断言）
 python 03_agent/caliber_check.py
 
-# 3) 全套回归测试（79 项）
+# 3) 全套回归测试（81 项）
 python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 ```
 

@@ -5,10 +5,10 @@
 1. `fmt()` 的数值格式化与空值处理；
 2. `build_rows()` 对四张表返回的**键名契约**（数据源用 DictCursor，返回 dict 行）；
 3. 中文取值翻译（州 / 品类 / 月份 / 消费分层）；
-4. 供守恒断言使用的合计字段。
+4. 供守恒断言使用的合计字段，以及月度表的"是否完整月"标记。
 
 为什么不测 SQL：SQL 需要 MySQL，CI 上没有；SQL 的正确性由
-`make_bi_exports.py` 运行时自带的 6 条守恒断言 + 4 条形状断言负责。
+`make_bi_exports.py` 运行时自带的 12 条断言（6 条守恒 + 2 条完整月区间 + 4 条形状）负责。
 本文件负责的是"Python 这一侧的转换逻辑有没有写错"。
 """
 
@@ -85,6 +85,22 @@ class TestBuildRowsOthers(unittest.TestCase):
         self.assertEqual(res["rows"][0][1], "2017 年 1 月")
         self.assertEqual(res["orders_sum"], 10)
 
+    def test_monthly_complete_flag_and_excluded_orders(self):
+        rows = [
+            {"ym": "2016-10", "orders": 324, "gmv": Decimal("59090.48"), "aov": Decimal("182.38")},
+            {"ym": "2017-01", "orders": 800, "gmv": Decimal("138488.04"), "aov": Decimal("173.11")},
+            {"ym": "2018-08", "orders": 6512, "gmv": Decimal("1022425.32"), "aov": Decimal("157.01")},
+            {"ym": "2018-09", "orders": 16, "gmv": Decimal("4439.54"), "aov": Decimal("277.47")},
+        ]
+        res = bi.build_rows("fct_monthly", rows)
+        self.assertEqual(res["header"][2], "是否完整月")
+        # 两端各一个不完整月 → 只有中间的 2017-01 / 2018-08 标记为"是"
+        self.assertEqual([r[2] for r in res["rows"]], ["否", "是", "是", "否"])
+        self.assertEqual(res["complete_months"], 2)
+        self.assertEqual(res["excluded_orders"], 340)
+        # 守恒式仍按全量算，不受标记影响
+        self.assertEqual(res["orders_sum"], 7652)
+
     def test_category_none_falls_back_to_placeholder(self):
         rows = [{"category": None, "items": 3, "price_sum": Decimal("30.00"), "orders": 2}]
         res = bi.build_rows("dim_category", rows)
@@ -115,6 +131,11 @@ class TestCaliberConstants(unittest.TestCase):
         self.assertEqual(bi.TOTAL_PRICE, Decimal("13591643.70"))
         self.assertEqual(bi.TOTAL_CUSTOMERS, 96095)
         self.assertEqual(bi.SEG_SIZE * 5, bi.TOTAL_CUSTOMERS)
+
+    def test_complete_month_window_locked(self):
+        # 业务判定：Olist 采集窗口 2016-09-04 ~ 2018-10-17，首尾月不完整。
+        # 窗口被改动时这里先失败，提醒同步 README 与断言。
+        self.assertEqual(bi.COMPLETE_MONTHS, ("2017-01", "2018-08"))
 
 
 if __name__ == "__main__":

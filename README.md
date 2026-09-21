@@ -91,7 +91,7 @@ flowchart TD
                   caliber_guard.py        # ★ 第 4 层：结果级口径断言 + 结构化反馈回灌
                   caliber_check.py        # ★ 口径自检工具（扫描五处口径是否一致）
                   stress_test.py          # ★ 高压测试（28 条攻击 SQL + 18 个对抗问题）
-                  tests/                  # ★ 回归测试（注入历史真实 bug，共 79 项）
+                  tests/                  # ★ 回归测试（注入历史真实 bug，共 81 项）
                   CALIBER.md              # ★ 口径登记表（唯一真源）
                   STRESS_REPORT.md        # 高压测试报告
                   model_comparison.md     # ★ 模型对比与评估结论
@@ -103,7 +103,7 @@ flowchart TD
                   sample_charts.html    # 离线样例图（10 题全部渲染）
 05_app/           app.py                  # Streamlit 前端
                   ../.streamlit/config.toml  # Streamlit 主题（与 chart_renderer 同色）
-06_bi/            make_bi_exports.py      # 生成 BI 层预聚合宽表（6 条守恒 + 4 条形状断言）
+06_bi/            make_bi_exports.py      # 生成 BI 层预聚合宽表（12 条断言：6 守恒 + 2 完整月 + 4 形状）
                   exports/*.csv           # Tableau / Power BI 直接可读的中文宽表
                   README.md               # BI 数据字典 + Tableau 操作说明
 docs/screenshots/ 01-landing.png 02-result.png   # README 用的界面截图
@@ -114,7 +114,13 @@ docs/screenshots/ 01-landing.png 02-result.png   # README 用的界面截图
 Agent 面向探索式提问（结果列与形状不固定），BI 层面向固定看板，两者是上下游关系：
 `06_bi/make_bi_exports.py` 按口径把数据预聚合成 4 张宽表（州 / 品类 / 月度 / 客户分层，
 含中文列名与取值），Tableau 直接连 CSV 即可出图。宽表口径与 `03_agent/CALIBER.md` 一致，
-脚本自带 6 条守恒断言 + 4 条形状断言，不通过则退出码 1。数据字典与操作步骤见 `06_bi/README.md`。
+脚本自带 12 条断言（6 条守恒 + 2 条完整月区间 + 4 条形状），不通过则退出码 1。
+数据字典与操作步骤见 `06_bi/README.md`。
+
+口径判断也一并落到字段里，而不是留给看板作者现场发挥。例如 Olist 的采集窗口是
+2016-09 ~ 2018-10，首尾月份本就采不满（2016-09 仅 3 单、2018-10 仅 4 单），
+`fct_monthly.csv` 因此带一列 `是否完整月`，做趋势图时筛掉首尾即可 —— 
+省得每个人各按各的理解裁一遍。
 
 ---
 
@@ -192,7 +198,7 @@ python 04_visualization/make_sample_charts.py
 python 03_agent/stress_test.py            # 只跑防火墙部分
 python 03_agent/stress_test.py --e2e      # 追加端到端对抗测试
 
-# 回归测试（无需数据库与 API Key，79 项）
+# 回归测试（无需数据库与 API Key，81 项）
 python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 ```
 
@@ -372,7 +378,7 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - 只读账号在 `.env` 中未配置，实际以 root 连接（代码层已限制只允许 SELECT）。
 - `config.yaml` 目前是**参考文件，尚未被代码读取**（实际配置以 `.env` 为准）。
 - 自动化测试覆盖**口径自检工具 + 口径断言 + 安全/执行边界 + 执行期回灌 + 可视化选图/中文标签**
-  （`03_agent/tests/`，79 项，无需 DB 与 API Key，约 1.6 秒跑完）。
+  （`03_agent/tests/`，81 项，无需 DB 与 API Key，约 1.6 秒跑完）。
 - LLM 在 `temperature=0` 下仍非完全确定（同一问题跨次运行偶尔给出不同写法），
   因此单次评估结果有波动；结论以"多轮口径治理 + 多模型同口径对比"的整体趋势为准。
 
@@ -384,10 +390,10 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - [x] 第 4 层口径断言 + 校验失败原因**结构化回灌**（`03_agent/caliber_guard.py`）
 - [x] 三模型同口径基线对比 + 评估指标扩展到四个
 - [x] 前端展示第 4 层校验结论 + README 界面截图
-- [x] 高压测试脚本（`stress_test.py`）+ 安全/执行边界单测（79 项）
+- [x] 高压测试脚本（`stress_test.py`）+ 安全/执行边界单测（81 项）
 - [x] 第 0 层拒答协议、第 3.5 层执行反馈、C23 作用域闸门
 - [x] 可视化**中文标签层**（`labels.py`）+ 纸面铅印风主题（图表与前端统一）
-- [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 79 项单测 + 口径自检）
+- [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 81 项单测 + 口径自检）
 - [ ] 口径断言做成**可配置规则表**（YAML），支持按数据集替换守恒量
 - [ ] C20 的"问题驱动"目前靠中文关键词正则，改为让 LLM 先声明"要哪几列"更稳
 - [ ] 支持多轮追问与图表交互下钻

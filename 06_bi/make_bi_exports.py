@@ -42,6 +42,17 @@ TOTAL_PRICE = Decimal("13591643.70")  # C15：SUM(order_items.price) —— 另�
 TOTAL_CUSTOMERS = 96095              # C14：有支付记录订单覆盖的 customer_unique_id 数
 SEG_SIZE = 19219                     # C14：NTILE(5) 每档人数（5 × 19219 = 96095）
 
+# ---------------------------------------------------------------------------
+# 完整月区间 —— 业务判定，不是能算出来的规则
+# ---------------------------------------------------------------------------
+# Olist 的采集窗口是 2016-09-04 ~ 2018-10-17，所以**首月与末月天然采不满**：
+#   2016-09 = 3 单、2016-10 = 324 单、2016-11 一单都没有、2016-12 = 1 单；
+#   2018-09 = 16 单、2018-10 = 4 单。
+# 趋势图若保留它们，y 轴会被空月拉开，而且视觉上像"业务断崖"——纯属采集边界，不是经营问题。
+# 判据：2017-01 起月单量进入稳定量级（>= 800），2018-08 后跌到两位数（已截止）。
+# 把结论写进宽表（新增"是否完整月"列），Tableau 里拖进筛选器即可，不必手工记日期。
+COMPLETE_MONTHS = ("2017-01", "2018-08")   # 共 20 个月，覆盖 99.65% 的订单
+
 PAY_CTE = """
 pay AS (
     SELECT order_id, SUM(payment_value) AS gmv
@@ -174,14 +185,18 @@ def build_rows(name, rows):
                 "money_sum": float(sum(r["price_sum"] or 0 for r in rows))}
 
     if name == "fct_monthly":
-        header = ["月份", "月份显示", "订单数", "成交额（元）", "客单价（元）"]
+        lo, hi = COMPLETE_MONTHS
+        header = ["月份", "月份显示", "是否完整月", "订单数", "成交额（元）", "客单价（元）"]
         out = []
         for r in rows:
-            out.append([r["ym"], zh_value("month", r["ym"]), int(r["orders"]),
-                        fmt(r["gmv"], MONEY), fmt(r["aov"], MONEY)])
+            complete = lo <= r["ym"] <= hi
+            out.append([r["ym"], zh_value("month", r["ym"]), "是" if complete else "否",
+                        int(r["orders"]), fmt(r["gmv"], MONEY), fmt(r["aov"], MONEY)])
         return {"header": header, "rows": out,
                 "orders_sum": int(sum(r["orders"] for r in rows)),
-                "money_sum": float(sum(r["gmv"] or 0 for r in rows))}
+                "money_sum": float(sum(r["gmv"] or 0 for r in rows)),
+                "complete_months": sum(1 for r in rows if lo <= r["ym"] <= hi),
+                "excluded_orders": int(sum(r["orders"] for r in rows if not (lo <= r["ym"] <= hi)))}
 
     if name == "dim_customer_segment":
         header = ["消费分层", "客户数", "人均消费（元）", "人均订单数"]
@@ -219,6 +234,9 @@ def main() -> int:
                 sums[name + "_money"] = Decimal(str(res["money_sum"]))
             if "seg_sizes" in res:
                 sums["seg_sizes"] = res["seg_sizes"]
+            if "complete_months" in res:
+                sums["complete_months"] = res["complete_months"]
+                sums["excluded_orders"] = res["excluded_orders"]
     finally:
         conn.close()
 
@@ -248,13 +266,28 @@ def main() -> int:
         print(f"  [FAIL] C14 每档人数应均为 {SEG_SIZE}，实际 {seg}")
         failed += 1
 
+    # ---- 完整月区间断言 ----
+    # 区间本身是业务判定，锁死它不被随手改动；同时确认被剔除的首尾月
+    # 确实只是"采集不全"，而不是把某个正常月份漏掉了。
+    n_complete = sums.get("complete_months")
+    if n_complete == 20 and COMPLETE_MONTHS == ("2017-01", "2018-08"):
+        print(f"  [OK  ] 完整月 {n_complete} 个（{COMPLETE_MONTHS[0]} ~ {COMPLETE_MONTHS[1]}）")
+    else:
+        print(f"  [FAIL] 完整月应为 20 个（2017-01 ~ 2018-08），实际 {n_complete}")
+        failed += 1
+    excluded = sums.get("excluded_orders") or 0
+    ratio = excluded / TOTAL_ORDERS
+    ok = ratio < 0.01
+    print(f"  [{'OK  ' if ok else 'FAIL'}] 被剔除月份订单数占比 < 1%: 实际 {excluded} 单（{ratio:.2%}）")
+    failed += 0 if ok else 1
+
     # ---- 形状断言：守恒式抓不到"粒度错了" ----
     # 教训：DATE_FORMAT 写成字面量时 25 个月被压成 1 行，但合计依旧等于总量，
     # 上面 6 条守恒断言全部通过 —— 所以粒度必须单独断言。
     shape_expect = {
         "dim_state": (25, 30),           # 27 个州
         "dim_category": (60, 90),        # 71 个品类 + 少量未翻译回退
-        "fct_monthly": (20, 30),         # 2016-09 ~ 2018-10 共 25 个月
+        "fct_monthly": (20, 30),         # 2016-09 ~ 2018-10 共 25 个月（其中 20 个为完整月）
         "dim_customer_segment": (5, 5),  # NTILE(5) 固定 5 档
     }
     for name, title, n, _ in written:
