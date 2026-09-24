@@ -1,5 +1,18 @@
+import time
+import hashlib
+from functools import lru_cache
 """调用 LLM 生成 SQL（temperature=0 保证稳定）。
 
+n# 缓存配置
+CACHE_SIZE = int(os.getenv("CACHE_SIZE", "200"))
+CACHE_TTL = int(os.getenv("CACHE_TTL", "3600"))
+
+def _get_cache_key(question: str, schema_text: str, error_feedback: str = "", model: str = "") -> str:
+    """生成缓存键"""
+    combined = f"{question}|{schema_text}|{error_feedback}|{model}"
+    return hashlib.md5(combined.encode()).hexdigest()
+
+@lru_cache(maxsize=CACHE_SIZE)
 兼容任何 OpenAI 协议的服务：改 .env 里的 OPENAI_BASE_URL / OPENAI_MODEL 即可
 （DeepSeek、通义千问兼容模式等）。
 """
@@ -36,27 +49,22 @@ def _clean(text: str) -> str:
     return text.strip().rstrip(";").strip()
 
 
-def generate_sql(
+def generate_sql_cached(
     question: str,
     schema_text: str,
     error_feedback: str | None = None,
     model: str | None = None,
     temperature: float = 0.0,
 ) -> str:
-    client = _client()
-    model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_prompt(question, schema_text, error_feedback)},
-    ]
-    kwargs = {"model": model, "temperature": temperature, "max_tokens": 1024, "messages": messages}
-    # 关闭 GLM 深度思考以大幅提速；端点不支持该参数时自动回退
-    disable = os.getenv("LLM_DISABLE_THINKING", "1") != "0"
+    """带缓存的SQL生成函数"""
+    start_time = time.time()
+    load_env()
+    
+    # 生成缓存键
+    cache_key = _get_cache_key(question, schema_text, error_feedback or "", model or os.getenv("OPENAI_MODEL", "gpt-4o"))
+    
+    # 检查缓存
     try:
-        resp = (
-            client.chat.completions.create(**kwargs, extra_body={"thinking": {"type": "disabled"}})
-            if disable
-            else client.chat.completions.create(**kwargs)
         )
     except Exception:  # noqa: BLE001
         resp = client.chat.completions.create(**kwargs)

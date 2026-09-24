@@ -207,21 +207,18 @@ question = st.text_area(
     placeholder="例如：每个月的销售额走势如何？各州的平均配送时长差多少？",
 )
 
-col_a, _ = st.columns([1, 5])
-with col_a:
-    run = st.button("开始分析", type="primary", width="stretch")
-
-# ---------------------------------------------------------------------------
-# 执行
-# ---------------------------------------------------------------------------
+# 输入验证和执行
 if run and not question.strip():
-    st.markdown('<div class="dj-note">请先写下问题。</div>', unsafe_allow_html=True)
+    st.markdown("<div class="dj-note">请先写下问题。</div>", unsafe_allow_html=True)
+elif run and len(question.strip()) > 500:
+    st.markdown("<div class="dj-note">问题过长，请简化问题（最多500字符）。</div>", unsafe_allow_html=True)
 elif run:
     with st.spinner("正在生成并执行 SQL ..."):
         try:
             out = ask(question.strip())
         except Exception as exc:  # noqa: BLE001
             st.error(f"执行失败：{exc}")
+            st.info("请检查网络连接或简化问题后重试")
             out = None
     if out:
         st.session_state.history.append(out)
@@ -248,11 +245,12 @@ elif run:
             )
             if out.get("sql"):
                 st.code(out["sql"], language="sql", wrap_lines=True)
-        else:
+            # 成功反馈
+            st.success(f"✓ 分析完成 - 生成重试 {attempts} 次")
+            
             attempts = out.get("attempts", 1)
             caliber_ok = out.get("caliber_ok", True)
             rows = out["result"]["rows"]
-
             # ---- § 01 生成的 SQL ----
             section("§ 01", "生成的 SQL",
                     note=f"temperature=0　·　生成重试 {attempts} 次")

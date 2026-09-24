@@ -388,6 +388,160 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 
 ---
 
+n## 安装
+
+### 环境要求
+- Python 3.8+
+- MySQL 5.7+
+- OpenAI API Key（支持 GLM、DeepSeek 等兼容服务）
+
+### 快速安装
+
+1. **克隆项目**
+
+```bash
+git clone https://github.com/lauv4life1/olist-text2sql-agent.git
+cd olist-text2sql-agent
+```
+
+2. **安装依赖**
+
+```bash
+pip install -r requirements.txt
+```
+
+3. **配置环境变量**
+
+复制 `.env.example` 为 `.env` 并填入真实值：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件，配置以下信息：
+
+```bash
+# MySQL 配置
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=olist_user
+MYSQL_PASSWORD=your_secure_password
+MYSQL_DATABASE=olist_ecommerce
+
+# LLM 配置
+OPENAI_API_KEY=your_api_key
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+OPENAI_MODEL=glm-4.6
+
+# 性能配置
+MAX_RETRIES=3
+RETRY_DELAY=1
+TEMPERATURE=0.1
+CACHE_SIZE=200
+```
+
+4. **导入数据**
+
+```bash
+cd 01_data
+python import_data.py
+```
+
+5. **启动应用**
+
+```bash
+cd 05_app
+streamlit run app.py
+```
+
+## 配置说明
+
+### 数据库配置
+- **安全连接**：支持只读账号配置（MYSQL_READONLY_USER/PASSWORD）
+- **超时设置**：30秒查询超时
+- **字符集**：utf8mb4
+
+### LLM 配置
+- **多模型支持**：支持 OpenAI 协议的任何服务
+- **温度设置**：默认 0.1，平衡稳定性和创造性
+- **重试机制**：最多 3 次重试，可配置
+
+### 缓存配置
+- **缓存大小**：200条查询结果
+- **缓存TTL**：3600秒（1小时）
+
+## 快速开始
+
+1. **启动应用**
+
+```bash
+cd 05_app
+streamlit run app.py
+```
+
+2. **提问示例**
+
+```
+- 2023年各州销售额排名
+- 最畅销的10个商品品类
+- 订单支付方式分布
+- 高价值客户特征分析
+```
+
+3. **查看结果**
+
+应用会自动：
+- 生成 SQL 查询
+- 执行 6 层校验
+- 显示口径校验结果
+- 生成可视化图表
+- 提供业务结论
+
+## 故障排除
+
+### 常见问题
+
+1. **数据库连接失败**
+   - 检查 MySQL 服务是否启动
+   - 验证 .env 中的数据库配置
+   - 确保数据库用户有 SELECT 权限
+
+2. **API 调用失败**
+   - 检查 API Key 是否正确
+   - 验证 API 余额是否充足
+   - 确认 API 端点地址
+
+3. **生成结果不准确**
+   - 尝试简化问题表述
+   - 检查数据是否正确导入
+   - 查看口径校验结果
+
+### 日志查看
+
+应用会在控制台输出详细日志，包括：
+- SQL 生成耗时
+- 重试次数
+- 口径校验结果
+- 错误信息
+
+## 性能优化
+
+### 缓存机制
+- 查询结果缓存避免重复调用 API
+- 基于问题哈希的智能缓存
+- 可配置的缓存大小和 TTL
+
+### 重试策略
+- 智能重试机制
+- 指数退避算法
+- 错误分类处理
+
+### 界面优化
+- 加载状态提示
+- 错误信息友好显示
+- 成功反馈提示
+
+
 ## 7. 已知限制
 
 - **严格一致率不是 100%**：Q2 / Q3 / Q4 / Q9 的差异主要是**辅助列**（基线给了明细列、模型按"只输出必需列"精简）。
