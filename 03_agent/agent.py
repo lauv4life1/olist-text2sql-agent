@@ -27,13 +27,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from db import load_env  # noqa: E402
 from schema_extractor import build_schema_context  # noqa: E402
-from sql_generator import generate_sql  # noqa: E402
+from sql_generator import generate_sql_cached as generate_sql  # noqa: E402
 from sql_validator import validate  # noqa: E402
 from sql_executor import execute  # noqa: E402
 from caliber_guard import check as check_caliber, format_feedback  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-MAX_RETRIES = 2
+# 从环境变量加载配置
+load_env()
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))  # 默认值保持原行为；可用环境变量覆盖
+RETRY_DELAY = int(os.getenv("RETRY_DELAY", "1"))
+TEMPERATURE = float(os.getenv("TEMPERATURE", "0.2"))  # 默认值保持原行为；可用环境变量覆盖
 
 # 模型"答不了"时的显式协议：与其让它编一条跑不通的 SQL，不如让它明说。
 CANNOT_ANSWER_MARKER = "CANNOT_ANSWER"
@@ -81,7 +85,7 @@ def _summarize(question: str, sql: str, result: dict) -> str:
     )
     kwargs = {
         "model": os.getenv("OPENAI_MODEL", "gpt-4o"),
-        "temperature": 0.2,
+        "temperature": TEMPERATURE,
         "max_tokens": 512,
         "messages": [{"role": "user", "content": prompt}],
     }

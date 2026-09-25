@@ -1,6 +1,10 @@
 # Olist 电商数据分析 Agent（Text2SQL）
 
 ![CI](https://github.com/lauv4life1/olist-text2sql-agent/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-5.7+-4479A1?logo=mysql&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-81%20passed-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
 > 用自然语言问业务问题 → Agent 自动生成 SQL → 校验执行 → 出图表 + 业务结论。
 > 基于 Kaggle **Brazilian E-Commerce (Olist)** 数据集，MySQL 存储，支持任意 OpenAI 协议大模型。
@@ -113,6 +117,9 @@ flowchart TD
 **目录结构**
 
 ```
+Dockerfile               # 容器化构建（Python 3.12 + MySQL client）
+docker-compose.yml       # 一键启动 MySQL + 应用
+.dockerignore            # 构建时排除 .git / .env / __pycache__ 等
 01_data/          questions.py            # 10 个业务问题定义
 02_sql/           sql_answers.py/.sql     # 手写 SQL 基线（ground truth）
                   baseline_results.json   # 基线执行结果
@@ -165,6 +172,14 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+**或使用 Docker（一键启动完整环境）：**
+
+```bash
+docker compose up -d           # 启动 MySQL + 应用
+# 首次需要导入数据（容器内执行）：
+docker compose exec app python 01_data/import_data.py
+```
+
 ### 3.2 数据准备
 
 1. 从 Kaggle 下载 **Brazilian E-Commerce Public Dataset by Olist**（9 个 CSV）。
@@ -190,6 +205,8 @@ CREATE DATABASE olist_ecommerce CHARACTER SET utf8mb4;
 
 ### 3.3 配置
 
+项目支持两种配置方式（优先级：环境变量 > `.env` > `config.yaml`）：
+
 ```bash
 cp .env.example .env      # 然后填入 MySQL 密码与 LLM API Key
 ```
@@ -203,6 +220,9 @@ OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL
 
 > 环境变量优先级高于 `.env`，因此**切换模型不用改文件**：
 > `OPENAI_MODEL=deepseek-chat OPENAI_BASE_URL=https://api.deepseek.com python 03_agent/evaluate.py deepseek`
+
+`config.yaml` 提供非敏感配置的默认值（数据库连接、LLM 参数、执行器超时等），
+`.env` 中的值会覆盖 `config.yaml` 中的同名配置。
 
 ### 3.4 运行
 
@@ -233,6 +253,15 @@ python 03_agent/stress_test.py --e2e      # 追加端到端对抗测试
 python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 ```
 
+**Docker 模式：**
+
+```bash
+docker compose up -d                # 启动 MySQL + 应用
+docker compose exec app python \    # 导入数据（首次）
+    01_data/import_data.py
+# 访问 http://localhost:8501
+```
+
 ---
 
 ## 4. 关键设计决策
@@ -249,6 +278,8 @@ python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 | 中文标签 | 独立 `labels.py` 做**列名 + 取值**双层映射，三级回退（精确 → 关键词规则 → 原文） | 中文业务问题不该吐英文列名；州代码 `SP`、品类 `health_beauty` 更是没人看得懂 |
 | 视觉风格 | **纸面铅印风**（暖白纸 + 墨色 + 朱砂单强调色 + 衬线 + 细线分区），不用深色渐变卡片 | 分析结论要像"一份报告"而不是"一块大屏"；颜色只用来表达强调，不用来装饰 |
 | 图表可读性 | 分类名超 5 字的柱状图**自动转横向条形并排序**；只保留横向细网格线 | 中文品类名竖排会挤成一团；去掉竖网格与图例框减少图形噪音 |
+| 配置管理 | `config.yaml`（非敏感默认值）→ `.env`（敏感信息）→ 环境变量（最高优先级） | 三层配置：开发用 yaml、部署用 .env、CI/Docker 用环境变量 |
+| 部署方式 | Docker Compose 一键启动（MySQL + 应用），或 Streamlit Community Cloud | 降低面试官体验门槛：一条命令跑通完整环境 |
 
 ---
 
@@ -407,7 +438,7 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - **口径断言依赖"守恒量已知"**：`99,440 / 96,095 / 16,008,872.12 / 13,591,643.70` 这几个数来自本项目数据集。
   换数据集需要重新取真值（`caliber_check.py` 会检查代码常量与登记表是否同步）。
 - 只读账号在 `.env` 中未配置，实际以 root 连接（代码层已限制只允许 SELECT）。
-- `config.yaml` 目前是**参考文件，尚未被代码读取**（实际配置以 `.env` 为准）。
+- `config.yaml` 提供非敏感配置，优先级低于 `.env` 与环境变量（详见 §3.3）。
 - 自动化测试覆盖**口径自检工具 + 口径断言 + 安全/执行边界 + 执行期回灌 + 可视化选图/中文标签**
   （`03_agent/tests/`，81 项，无需 DB 与 API Key，约 1.6 秒跑完）。
 - LLM 在 `temperature=0` 下仍非完全确定（同一问题跨次运行偶尔给出不同写法），
@@ -425,7 +456,7 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - [x] 第 0 层拒答协议、第 3.5 层执行反馈、C23 作用域闸门
 - [x] 可视化**中文标签层**（`labels.py`）+ 纸面铅印风主题（图表与前端统一）
 - [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 81 项单测 + 口径自检）
-- [ ] 口径断言做成**可配置规则表**（YAML），支持按数据集替换守恒量
+- [x] 口径断言做成**可配置规则表**（YAML），支持按数据集替换守恒量
 - [ ] C20 的"问题驱动"目前靠中文关键词正则，改为让 LLM 先声明"要哪几列"更稳
 - [ ] 支持多轮追问与图表交互下钻
 
