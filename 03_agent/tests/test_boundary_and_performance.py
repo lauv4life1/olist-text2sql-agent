@@ -1,182 +1,91 @@
-"""边界测试和性能测试
+"""SQL 生成器的边界与缓存行为测试（不需要 DB、不需要 API Key）。
 
-测试输入边界、性能指标和错误处理
+所有 LLM 调用一律 mock —— 与项目既有测试同一原则：CI 零网络、零成本。
 """
-import time
+from __future__ import annotations
+
+import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-# 简化导入，避免路径问题
-try:
-    from sql_generator import generate_sql_cached, _get_cache_key
-except ImportError:
-    # 如果导入失败，定义简单的测试函数
-    def _get_cache_key(question, schema, error_feedback="", model=""):
-        return f"test_key_{hash(question)}_{hash(schema)}"
-    
-    def generate_sql_cached(question, schema, error_feedback=None, model=None, temperature=0.0):
-        return "SELECT * FROM test"
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "03_agent"))
+
+import sql_generator  # noqa: E402
+from sql_generator import _clean, generate_sql_cached  # noqa: E402
 
 
-class TestBoundary(unittest.TestCase):
-    """边界测试"""
-    
+def _mock_client(content: str = "SELECT 1"):
+    client = MagicMock()
+    resp = MagicMock()
+    resp.choices[0].message.content = content
+    client.chat.completions.create.return_value = resp
+    return client
+
+
+class TestClean(unittest.TestCase):
+    """_clean：剥离 Markdown 围栏与多余分号"""
+
+    def test_plain_sql(self):
+        self.assertEqual(_clean("SELECT 1;"), "SELECT 1")
+
+    def test_fenced_sql(self):
+        self.assertEqual(_clean("```sql\nSELECT 1;\n```"), "SELECT 1")
+
     def test_empty_input(self):
-        """测试空输入"""
-        with self.assertRaises(Exception):
-            generate_sql_cached("", "schema")
-    
-    def test_long_input(self):
-        """测试超长输入"""
-        long_question = "a" * 1000
-        long_schema = "b" * 1000
-        try:
-            result = generate_sql_cached(long_question, long_schema)
-            self.assertIsInstance(result, str)
-        except Exception:
-            # 长输入可能因API限制失败，但不应崩溃
-            pass
-    
-    def test_special_characters(self):
-        """测试特殊字符"""
-        special_chars = "!@#$%^&*()_+-=[]{}|;':\",.<>/?`~"
-        try:
-            result = generate_sql_cached(f"问题包含{special_chars}", "schema")
-            self.assertIsInstance(result, str)
-        except Exception:
-            # 特殊字符可能因API限制失败，但不应崩溃
-            pass
-    
-    def test_cache_key_generation(self):
-        """测试缓存键生成"""
-        key1 = _get_cache_key("问题1", "schema1")
-        key2 = _get_cache_key("问题1", "schema1")
-        key3 = _get_cache_key("问题2", "schema1")
-        
-        # 相同输入应生成相同键
-        self.assertEqual(key1, key2)
-        # 不同输入应生成不同键
-        self.assertNotEqual(key1, key3)
-        
-        # 测试带错误反馈的缓存键
-        key4 = _get_cache_key("问题1", "schema1", "error1")
-        self.assertNotEqual(key1, key4)
-    
-    def test_cache_overflow(self):
-        """测试缓存溢出处理"""
-        # 填满缓存
-        for i in range(300):  # 超过CACHE_SIZE=200
-            generate_sql_cached(f"问题{i}", f"schema{i}")
-        
-        # 缓存应自动处理溢出，不应崩溃
-        try:
-            result = generate_sql_cached("测试问题", "测试schema")
-            self.assertIsInstance(result, str)
-        except Exception:
-            pass
+        self.assertEqual(_clean(""), "")
 
 
-class TestPerformance(unittest.TestCase):
-    """性能测试"""
-    
-    @patch('sql_generator._client')
-    def test_sql_generation_performance(self, mock_client):
-        """测试SQL生成性能"""
-        # 模拟快速响应
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = "SELECT * FROM test"
-        mock_client.return_value.chat.completions.create.return_value = mock_response
-        
-        # 测试性能
-        start_time = time.time()
-        result = generate_sql_cached("简单问题", "简单schema")
-        end_time = time.time()
-        
-        elapsed = end_time - start_time
-        self.assertLess(elapsed, 5.0, "SQL生成应在5秒内完成")
-        self.assertIsInstance(result, str)
-    
-    @patch('sql_generator._client')
-    def test_cache_performance(self, mock_client):
-        """测试缓存性能"""
-        # 模拟响应
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = "SELECT * FROM test"
-        mock_client.return_value.chat.completions.create.return_value = mock_response
-        
-        # 第一次调用（无缓存）
-        start_time = time.time()
-        result1 = generate_sql_cached("缓存测试", "测试schema")
-        first_call_time = time.time() - start_time
-        
-        # 第二次调用（有缓存）
-        start_time = time.time()
-        result2 = generate_sql_cached("缓存测试", "测试schema")
-        second_call_time = time.time() - start_time
-        
-        # 验证结果一致
-        self.assertEqual(result1, result2)
-        
-        # 缓存调用应显著更快
-        self.assertLess(second_call_time, first_call_time / 2)
-    
-    def test_concurrent_access(self):
-        """测试并发访问"""
-        import threading
-        import concurrent.futures
-        
-        results = []
-        
-        def worker(question_id):
-            try:
-                result = generate_sql_cached(f"并发问题{question_id}", f"schema{question_id}")
-                results.append(result)
-            except Exception:
-                results.append(None)
-        
-        # 创建多个线程并发调用
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(worker, i) for i in range(10)]
-            concurrent.futures.wait(futures)
-        
-        # 验证所有调用都完成
-        self.assertEqual(len(results), 10)
-        
-        # 验证结果不为空
-        for result in results:
-            self.assertIsNotNone(result)
+class TestGenerateSqlCached(unittest.TestCase):
+    """缓存行为：同一参数组合只调一次 LLM"""
+
+    def setUp(self):
+        generate_sql_cached.cache_clear()
+
+    def tearDown(self):
+        generate_sql_cached.cache_clear()
+
+    def test_cache_hit_avoids_second_llm_call(self):
+        client = _mock_client()
+        with patch.object(sql_generator, "_client", return_value=client):
+            r1 = generate_sql_cached("缓存问题甲", "schema_a")
+            r2 = generate_sql_cached("缓存问题甲", "schema_a")
+        self.assertEqual(r1, r2)
+        self.assertEqual(client.chat.completions.create.call_count, 1)
+
+    def test_different_question_cache_miss(self):
+        client = _mock_client()
+        with patch.object(sql_generator, "_client", return_value=client):
+            generate_sql_cached("缓存问题乙一", "schema_b")
+            generate_sql_cached("缓存问题乙二", "schema_b")
+        self.assertEqual(client.chat.completions.create.call_count, 2)
+
+    def test_error_feedback_participates_in_cache_key(self):
+        client = _mock_client()
+        with patch.object(sql_generator, "_client", return_value=client):
+            generate_sql_cached("缓存问题丙", "schema_c", error_feedback=None)
+            generate_sql_cached("缓存问题丙", "schema_c", error_feedback="上次错了")
+        self.assertEqual(client.chat.completions.create.call_count, 2)
+
+    def test_boundary_inputs_do_not_crash(self):
+        client = _mock_client()
+        with patch.object(sql_generator, "_client", return_value=client):
+            r1 = generate_sql_cached("很长" * 500, "schema_d")
+            r2 = generate_sql_cached("!@#$%^&*()\"'", "schema_d")
+        self.assertIsInstance(r1, str)
+        self.assertIsInstance(r2, str)
+
+    def test_llm_error_propagates_and_not_cached(self):
+        client = MagicMock()
+        client.chat.completions.create.side_effect = Exception("boom")
+        with patch.object(sql_generator, "_client", return_value=client):
+            with self.assertRaises(Exception):
+                generate_sql_cached("缓存问题戊", "schema_e")
+            # 异常不进缓存：换正常 client 后同参数应能成功
+            with patch.object(sql_generator, "_client", return_value=_mock_client()):
+                self.assertEqual(generate_sql_cached("缓存问题戊", "schema_e"), "SELECT 1")
 
 
-class TestErrorHandling(unittest.TestCase):
-    """错误处理测试"""
-    
-    @patch('sql_generator._client')
-    def test_api_error_handling(self, mock_client):
-        """测试API错误处理"""
-        # 模拟API错误
-        mock_client.side_effect = Exception("API Error")
-        
-        with self.assertRaises(Exception):
-            generate_sql_cached("测试问题", "测试schema")
-    
-    @patch('sql_generator._client')
-    def test_timeout_handling(self, mock_client):
-        """测试超时处理"""
-        # 模拟超时错误
-        mock_client.side_effect = Exception("Timeout")
-        
-        with self.assertRaises(Exception):
-            generate_sql_cached("测试问题", "测试schema")
-    
-    @patch('sql_generator._client')
-    def test_rate_limit_handling(self, mock_client):
-        """测试速率限制处理"""
-        # 模拟速率限制错误
-        mock_client.side_effect = Exception("Rate limit exceeded")
-        
-        with self.assertRaises(Exception):
-            generate_sql_cached("测试问题", "测试schema")
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

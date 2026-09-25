@@ -209,9 +209,9 @@ question = st.text_area(
 
 # 输入验证和执行
 if run and not question.strip():
-    st.markdown("<div class="dj-note">请先写下问题。</div>", unsafe_allow_html=True)
+    st.markdown('<div class="dj-note">请先写下问题。</div>', unsafe_allow_html=True)
 elif run and len(question.strip()) > 500:
-    st.markdown("<div class="dj-note">问题过长，请简化问题（最多500字符）。</div>", unsafe_allow_html=True)
+    st.markdown('<div class="dj-note">问题过长，请简化问题（最多500字符）。</div>', unsafe_allow_html=True)
 elif run:
     with st.spinner("正在生成并执行 SQL ..."):
         try:
@@ -245,12 +245,12 @@ elif run:
             )
             if out.get("sql"):
                 st.code(out["sql"], language="sql", wrap_lines=True)
-            # 成功反馈
-            st.success(f"✓ 分析完成 - 生成重试 {attempts} 次")
-            
+        else:
             attempts = out.get("attempts", 1)
             caliber_ok = out.get("caliber_ok", True)
             rows = out["result"]["rows"]
+            # 成功反馈
+            st.success(f"✓ 分析完成 - 生成重试 {attempts} 次")
             # ---- § 01 生成的 SQL ----
             section("§ 01", "生成的 SQL",
                     note=f"temperature=0　·　生成重试 {attempts} 次")
