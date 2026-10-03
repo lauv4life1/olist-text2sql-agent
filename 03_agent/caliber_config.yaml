@@ -1,0 +1,21 @@
+# 口径期望值配置（caliber_guard 使用）
+# 换数据集时只需改这个文件，不用改代码
+
+caliber:
+  # 全局守恒
+  expected_total_orders: 99440
+  expected_gmv: 16008872.12
+  expected_price_sum: 13591643.70
+
+  # 客户分层
+  expected_total_customers: 96095
+  expected_quintile_count: 5
+
+  # 容差（百分比）
+  tolerance_pct: 0.5
+
+  # 维度守恒：各州订单数之和 = 总订单数
+  state_sum_equals_total: true
+
+  # 扇出检测
+  fanout_check_enabled: true

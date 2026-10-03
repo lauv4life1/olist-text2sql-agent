@@ -1,11 +1,21 @@
 # Olist Text2SQL 项目配置
 # 敏感信息（密码、API Key）放 .env，本文件只放非敏感配置。
 
+data:
+  csv_dir: ""  # CSV 文件目录，留空则查找 data/ 或 01_data/csv/
+  # skip_tables: "geolocation"  # 可选：跳过不需要的大表（逗号分隔）
+
 database:
   host: 127.0.0.1
   port: 3306
   user: root
   database: olist_ecommerce
+  # readonly_user: readonly        # 运行 01_data/setup_readonly_user.py 后取消注释
+  # readonly_password: readonly_pass_2024
+
+# 连接池（需要 DBUtils，无则自动回退普通连接）
+pool:
+  size: 5
 
 # Schema 精简注入：留空表示注入全部表；填写表名可只注入相关表，省 token
 schema:

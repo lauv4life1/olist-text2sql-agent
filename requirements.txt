@@ -1,8 +1,9 @@
 # Olist Text2SQL 项目依赖
 pymysql>=1.1.0          # MySQL 连接（01_data / 02_sql / 03_agent）
-pandas>=2.0.0           # 数据处理（04_visualization）
+pandas>=2.0.0           # 数据处理（01_data / 04_visualization）
 plotly>=5.20.0          # 可视化（04_visualization）
 streamlit>=1.35.0       # 前端（05_app）
 openai>=1.30.0          # LLM 调用（03_agent，兼容 OpenAI 协议的服务通用）
-pyyaml>=6.0.0           # 配置文件读取（config.yaml）
-python-dotenv>=1.0.0    # 预留：当前 .env 读取由 db.py 的 load_env() 自行实现
+pyyaml>=6.0.0           # 配置文件读取（config.yaml，db.py load_env 已集成）
+python-dotenv>=1.0.0    # 预留兼容
+DBUtils>=3.0.0          # 连接池（db.py 自动检测，无则回退普通连接）
