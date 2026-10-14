@@ -99,7 +99,7 @@ flowchart TD
     SV -- "不通过" --> FB["静态错误回灌"] --> SG
     SV -- "通过" --> EX["sql_executor<br/>只读连接 + 超时 + 限行"]
     EX -- "运行期报错(3024 / 子查询多行)" --> EF["第 3.5 层：执行错误回灌"] --> SG
-    EX -- "拿到结果" --> CG{"★ 第 4 层校验<br/>caliber_guard<br/>结果级口径守恒断言"}
+    EX -- "拿到结果" --> CG{"第 4 层校验<br/>caliber_guard<br/>结果级口径守恒断言"}
     CG -- "违反口径（哪一列 / 哪一类）" --> CF["结构化口径反馈回灌"] --> SG
     CG -- "通过" --> SUM["LLM 生成业务结论"]
     CG -- "通过" --> CH["chart_selector + chart_renderer<br/>按结果形状自动选图"]
@@ -117,34 +117,29 @@ flowchart TD
 **目录结构**
 
 ```
-Dockerfile               # 容器化构建（Python 3.12 + MySQL client）
-docker-compose.yml       # 一键启动 MySQL + 应用
-.dockerignore            # 构建时排除 .git / .env / __pycache__ 等
-01_data/          questions.py            # 10 个业务问题定义
-02_sql/           sql_answers.py/.sql     # 手写 SQL 基线（ground truth）
-                  baseline_results.json   # 基线执行结果
-03_agent/         db.py schema_extractor.py prompt_builder.py sql_generator.py
-                  sql_validator.py sql_executor.py agent.py evaluate.py
-                  caliber_guard.py        # ★ 第 4 层：结果级口径断言 + 结构化反馈回灌
-                  caliber_check.py        # ★ 口径自检工具（扫描五处口径是否一致）
-                  stress_test.py          # ★ 高压测试（28 条攻击 SQL + 18 个对抗问题）
-                  tests/                  # ★ 回归测试（注入历史真实 bug，共 81 项）
-                  CALIBER.md              # ★ 口径登记表（唯一真源）
-                  STRESS_REPORT.md        # 高压测试报告
-                  model_comparison.md     # ★ 模型对比与评估结论
-                  INTERVIEW_NOTES.md      # 面试应答话术
-04_visualization/ chart_selector.py     # 按结果形状自动选图
-                  chart_renderer.py     # ★ Plotly 渲染（纸面铅印风 + 中文轴）
-                  labels.py             # ★ 中文标签层（列名 / 州 / 品类 / 分层）
-                  make_sample_charts.py # 生成 sample_charts.html
-                  sample_charts.html    # 离线样例图（10 题全部渲染）
-05_app/           app.py                  # Streamlit 前端
-                  ../.streamlit/config.toml  # Streamlit 主题（与 chart_renderer 同色）
-06_bi/            make_bi_exports.py      # 生成 BI 层预聚合宽表（12 条断言：6 守恒 + 2 完整月 + 4 形状）
-                  exports/*.csv           # Tableau / Power BI 直接可读的中文宽表
-                  README.md               # BI 数据字典 + Tableau 操作说明
-docs/screenshots/ 01-landing.png 02-result.png           # Agent 前端截图
-                  03~06-bi-*.png 07-bi-dashboard.png     # Tableau 看板截图
+.
+├── 01_data/                数据导入与只读账号脚本
+│   ├── import_data.py      CSV 导入 MySQL
+│   └── questions.py        10 个业务问题定义
+├── 02_sql/                 手写 SQL 基线（评估用 ground truth）
+│   ├── sql_answers.sql     10 题基线 SQL（多表 JOIN / 窗口函数）
+│   ├── mom_yoy.sql         环比 / 同比分析模板
+│   └── funnel.sql          履约漏斗
+├── 03_agent/               核心链路：生成 → 四层校验 → 执行 → 结论
+│   ├── agent.py            编排器（失败回灌重试）
+│   ├── sql_generator.py    LLM 调用，带 LRU 缓存
+│   ├── sql_validator.py    第 1-3 层：安全 / 语法 / schema
+│   ├── caliber_guard.py    第 4 层：结果级守恒断言
+│   ├── ab_test.py          A/B 测试统计（z 检验、样本量估算）
+│   ├── CALIBER.md          口径登记表（唯一真源）
+│   └── tests/              92 项单元测试（全 mock，CI 约 1 秒）
+├── 04_visualization/       自动选图 + Plotly 渲染 + 中文标签层
+├── 05_app/                 Streamlit 前端
+├── 06_bi/                  Tableau 预聚合宽表，含数据字典
+├── docs/screenshots/       界面与看板截图
+├── Dockerfile              容器化构建
+├── docker-compose.yml      一键起 MySQL + 应用
+└── config.yaml             非敏感配置；守恒量在 03_agent/caliber_config.yaml
 ```
 
 **BI 层（Tableau）**
@@ -249,7 +244,7 @@ python 04_visualization/make_sample_charts.py
 python 03_agent/stress_test.py            # 只跑防火墙部分
 python 03_agent/stress_test.py --e2e      # 追加端到端对抗测试
 
-# 回归测试（无需数据库与 API Key，81 项）
+# 回归测试（无需数据库与 API Key，92 项）
 python -m unittest discover -s 03_agent/tests -t 03_agent/tests
 ```
 
@@ -279,7 +274,7 @@ docker compose exec app python \    # 导入数据（首次）
 | 视觉风格 | **纸面铅印风**（暖白纸 + 墨色 + 朱砂单强调色 + 衬线 + 细线分区），不用深色渐变卡片 | 分析结论要像"一份报告"而不是"一块大屏"；颜色只用来表达强调，不用来装饰 |
 | 图表可读性 | 分类名超 5 字的柱状图**自动转横向条形并排序**；只保留横向细网格线 | 中文品类名竖排会挤成一团；去掉竖网格与图例框减少图形噪音 |
 | 配置管理 | `config.yaml`（非敏感默认值）→ `.env`（敏感信息）→ 环境变量（最高优先级） | 三层配置：开发用 yaml、部署用 .env、CI/Docker 用环境变量 |
-| 部署方式 | Docker Compose 一键启动（MySQL + 应用），或 Streamlit Community Cloud | 降低面试官体验门槛：一条命令跑通完整环境 |
+| 部署方式 | Docker Compose 一键启动（MySQL + 应用），或 Streamlit Community Cloud | 降低上手门槛：一条命令跑通完整环境 |
 
 ---
 
@@ -440,7 +435,7 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - 只读账号在 `.env` 中未配置，实际以 root 连接（代码层已限制只允许 SELECT）。
 - `config.yaml` 提供非敏感配置，优先级低于 `.env` 与环境变量（详见 §3.3）。
 - 自动化测试覆盖**口径自检工具 + 口径断言 + 安全/执行边界 + 执行期回灌 + 可视化选图/中文标签**
-  （`03_agent/tests/`，81 项，无需 DB 与 API Key，约 1.6 秒跑完）。
+  （`03_agent/tests/`，92 项，无需 DB 与 API Key，约 1.6 秒跑完）。
 - LLM 在 `temperature=0` 下仍非完全确定（同一问题跨次运行偶尔给出不同写法），
   因此单次评估结果有波动；结论以"多轮口径治理 + 多模型同口径对比"的整体趋势为准。
 
@@ -452,10 +447,10 @@ SQL 带 `LIMIT`、按排名取前 N、或结果被 1000 行上限截断时，各
 - [x] 第 4 层口径断言 + 校验失败原因**结构化回灌**（`03_agent/caliber_guard.py`）
 - [x] 三模型同口径基线对比 + 评估指标扩展到四个
 - [x] 前端展示第 4 层校验结论 + README 界面截图
-- [x] 高压测试脚本（`stress_test.py`）+ 安全/执行边界单测（81 项）
+- [x] 高压测试脚本（`stress_test.py`）+ 安全/执行边界单测（92 项）
 - [x] 第 0 层拒答协议、第 3.5 层执行反馈、C23 作用域闸门
 - [x] 可视化**中文标签层**（`labels.py`）+ 纸面铅印风主题（图表与前端统一）
-- [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 81 项单测 + 口径自检）
+- [x] 把 `caliber_check.py` + 单测接入 CI（GitHub Actions：push / PR 自动跑 92 项单测 + 口径自检）
 - [x] 口径断言做成**可配置规则表**（YAML），支持按数据集替换守恒量
 - [ ] C20 的"问题驱动"目前靠中文关键词正则，改为让 LLM 先声明"要哪几列"更稳
 - [ ] 支持多轮追问与图表交互下钻
