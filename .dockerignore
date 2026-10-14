@@ -12,3 +12,7 @@ __pycache__
 *.log
 docs/screenshots
 06_bi/exports
+
+# 评估/压测产物，运行时不需要
+03_agent/agent_results_*.json
+03_agent/stress_report.json

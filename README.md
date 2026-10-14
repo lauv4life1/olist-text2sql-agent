@@ -242,7 +242,7 @@ required_sample_size(0.10, 0.02)         # 检出 2pp 提升每组所需样本�
 │   ├── caliber_guard.py    第 4 层：结果级守恒断言
 │   ├── ab_test.py          A/B 测试统计（z 检验、样本量估算）
 │   ├── CALIBER.md          口径登记表（唯一真源）
-│   └── tests/              92 项单元测试（全 mock，CI 约 1 秒）
+│   └── tests/              92 项单元测试（全 mock，秒级跑完）
 ├── 04_visualization/       自动选图 + Plotly 渲染 + 中文标签层
 ├── 05_app/                 Streamlit 前端
 ├── 06_bi/                  Tableau 预聚合宽表，含数据字典
@@ -255,7 +255,7 @@ required_sample_size(0.10, 0.02)         # 检出 2pp 提升每组所需样本�
 ## 测试与 CI
 
 - 92 项单元测试：覆盖口径自检、第 4 层断言、安全 / 执行边界、执行期回灌、
-  可视化选图与中文标签、A/B 统计；全 mock，无需数据库与 API Key，2 秒内跑完
+  可视化选图与中文标签、A/B 统计；全 mock，无需数据库与 API Key，秒级跑完
 - GitHub Actions 在 push / PR 时跑全部单测 + 口径自检
 - `stress_test.py`：23 条攻击 SQL + 5 条执行器绕过用例（离线），18 个端到端对抗问题
   （破坏性意图 / 提示注入 / schema 幻觉 / 歧义 / 口径陷阱 / 鲁棒性六类）。
